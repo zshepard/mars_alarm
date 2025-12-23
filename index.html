@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARS - My Automated Routine System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #brightness-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transition: opacity 0.1s linear;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .header {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .emoji {
+            font-size: 3em;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .input-group {
+            margin: 25px 0;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        input:focus {
+            outline: 2px solid #fff;
+        }
+
+        button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            min-height: 60px;
+            display: none;
+        }
+
+        .status.active {
+            display: block;
+        }
+
+        .current-time {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .alarm-info {
+            opacity: 0.9;
+        }
+
+        .alarm-triggered {
+            font-size: 2em;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="brightness-overlay"></div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="emoji">🚀</div>
+            <h1>MARS</h1>
+            <div class="subtitle">My Automated Routine System</div>
+        </div>
+
+        <div id="setup-form">
+            <div class="input-group">
+                <label for="url-input">Website URL:</label>
+                <input type="text" id="url-input" placeholder="https://www.youtube.com/watch?v=..." value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+            </div>
+
+            <div class="input-group">
+                <label for="time-input">Alarm Time (HH:MM:SS):</label>
+                <input type="text" id="time-input" placeholder="14:30:00" pattern="[0-9]{2}:[0-9]{2}:[0-9]{2}">
+            </div>
+
+            <button id="set-alarm-btn" onclick="setAlarm()">Set Alarm</button>
+        </div>
+
+        <div class="status" id="status">
+            <div class="current-time" id="current-time"></div>
+            <div class="alarm-info" id="alarm-info"></div>
+        </div>
+    </div>
+
+    <script>
+        let alarmTime = null;
+        let alarmUrl = null;
+        let checkInterval = null;
+        let brightnessInterval = null;
+
+        function setAlarm() {
+            const urlInput = document.getElementById('url-input').value.trim();
+            const timeInput = document.getElementById('time-input').value.trim();
+
+            // Validate inputs
+            if (!timeInput.match(/^[0-9]{2}:[0-9]{2}:[0-9]{2}$/)) {
+                alert('Please enter time in HH:MM:SS format (e.g., 14:30:00)');
+                return;
+            }
+
+            // Set URL
+            alarmUrl = urlInput || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+            if (!alarmUrl.startsWith('http://') && !alarmUrl.startsWith('https://')) {
+                alarmUrl = 'https://' + alarmUrl;
+            }
+
+            alarmTime = timeInput;
+
+            // Hide form, show status
+            document.getElementById('setup-form').classList.add('hidden');
+            document.getElementById('status').classList.add('active');
+
+            // Start checking time
+            checkInterval = setInterval(checkTime, 1000);
+            checkTime(); // Check immediately
+        }
+
+        function checkTime() {
+            const now = new Date();
+            const currentTime = now.toTimeString().split(' ')[0];
+            
+            document.getElementById('current-time').textContent = `Current Time: ${currentTime}`;
+            document.getElementById('alarm-info').textContent = `Alarm set for: ${alarmTime}`;
+
+            if (currentTime === alarmTime) {
+                triggerAlarm();
+            }
+        }
+
+        function triggerAlarm() {
+            clearInterval(checkInterval);
+            
+            document.getElementById('alarm-info').innerHTML = '<div class="alarm-triggered">⏰ MARS ALARM ACTIVATED!</div>';
+            
+            // Open URL immediately
+            window.open(alarmUrl, '_blank');
+            
+            // Start brightness animation
+            startBrightnessAnimation();
+        }
+
+        function startBrightnessAnimation() {
+            const overlay = document.getElementById('brightness-overlay');
+            overlay.style.opacity = 1; // Start dark
+            let brightness = 100;
+            const duration = 120000; // 120 seconds
+            const steps = 100;
+            const stepDuration = duration / steps;
+
+            brightnessInterval = setInterval(() => {
+                brightness -= 1;
+                overlay.style.opacity = brightness / 100;
+
+                if (brightness <= 0) {
+                    clearInterval(brightnessInterval);
+                }
+            }, stepDuration);
+        }
+
+        // Initialize with current time display
+        window.onload = function() {
+            const now = new Date();
+            const currentTime = now.toTimeString().split(' ')[0];
+            console.log(`MARS initialized at ${currentTime}`);
+        };
+    </script>
+</body>
+</html>
