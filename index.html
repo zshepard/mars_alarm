@@ -202,10 +202,25 @@
                 return;
             }
 
-            // Set URL
-            alarmUrl = urlInput || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
-            if (!alarmUrl.startsWith('http://') && !alarmUrl.startsWith('https://')) {
-                alarmUrl = 'https://' + alarmUrl;
+            // Set URL - ensure proper formatting
+            if (urlInput) {
+                alarmUrl = urlInput;
+                // Add https:// only if no protocol specified
+                if (!alarmUrl.startsWith('http://') && !alarmUrl.startsWith('https://')) {
+                    alarmUrl = 'https://' + alarmUrl;
+                }
+            } else {
+                // Default URL
+                alarmUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+            }
+            
+            // Validate URL format
+            try {
+                new URL(alarmUrl);
+                console.log('Valid URL set:', alarmUrl);
+            } catch (e) {
+                alert('Invalid URL format. Please check your URL.');
+                return;
             }
 
             alarmTime = timeInput;
