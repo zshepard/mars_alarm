@@ -236,10 +236,7 @@
             
             document.getElementById('alarm-info').innerHTML = '<div class="alarm-triggered">⏰ MARS ALARM ACTIVATED!</div>';
             
-            // Open URL immediately
-            window.open(alarmUrl, '_blank');
-            
-            // Start brightness animation
+            // Start brightness animation and open link at the end
             startBrightnessAnimation();
         }
 
@@ -257,6 +254,8 @@
 
                 if (brightness <= 0) {
                     clearInterval(brightnessInterval);
+                    // Open the URL at the end of brightness animation
+                    window.location.href = alarmUrl;
                 }
             }, stepDuration);
         }
